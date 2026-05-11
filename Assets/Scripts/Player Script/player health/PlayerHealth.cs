@@ -1,8 +1,12 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// DEBUG VERSION - Temporary version with extensive logging
+/// Replace your PlayerHealth.cs with this TEMPORARILY to see what's happening
+/// After debugging, switch back to your original
+/// </summary>
 public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance;
@@ -36,6 +40,8 @@ public class PlayerHealth : MonoBehaviour
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        Debug.Log("=== PLAYERHEALTH: Awake called ===");
     }
 
     void Start()
@@ -50,6 +56,11 @@ public class PlayerHealth : MonoBehaviour
         }
 
         UpdateHealthUI();
+
+        Debug.Log($"=== PLAYERHEALTH: Start complete ===");
+        Debug.Log($"Max Health: {maxHealth}");
+        Debug.Log($"Current Health: {currentHealth}");
+        Debug.Log($"Invincible Duration: {invincibleDuration}");
     }
 
     void Update()
@@ -58,7 +69,10 @@ public class PlayerHealth : MonoBehaviour
         {
             _invincibleTimer -= Time.deltaTime;
             if (_invincibleTimer <= 0f)
+            {
                 _isInvincible = false;
+                Debug.Log(">>> Invincibility ended");
+            }
         }
 
         // Pulse vignette when low HP
@@ -75,41 +89,86 @@ public class PlayerHealth : MonoBehaviour
                 vignetteObject.SetActive(false);
             }
         }
+
+        // DEBUG: Press K to test damage
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            Debug.Log(">>> DEBUG: K pressed - testing TakeDamage(2)");
+            TakeDamage(2f);
+        }
+
+        // DEBUG: Press L to check status
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            Debug.Log("=== PLAYER STATUS ===");
+            Debug.Log($"Current Health: {currentHealth}/{maxHealth}");
+            Debug.Log($"Is Dead: {_isDead}");
+            Debug.Log($"Is Invincible: {_isInvincible}");
+            Debug.Log($"Invincible Timer: {_invincibleTimer}");
+            Debug.Log("=====================");
+        }
     }
 
     public void TakeDamage(float amount)
     {
-        if (_isInvincible || _isDead) return;
+        Debug.Log($">>> TakeDamage called! Amount: {amount}");
+        Debug.Log($">>> Current state - Health: {currentHealth}, Invincible: {_isInvincible}, Dead: {_isDead}");
+
+        if (_isInvincible)
+        {
+            Debug.Log(">>> BLOCKED: Player is invincible!");
+            return;
+        }
+
+        if (_isDead)
+        {
+            Debug.Log(">>> BLOCKED: Player is already dead!");
+            return;
+        }
 
         currentHealth -= amount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-        Debug.Log("Player took damage! HP: " + currentHealth);
+
+        Debug.Log($">>> DAMAGE APPLIED! New health: {currentHealth}");
 
         _isInvincible = true;
         _invincibleTimer = invincibleDuration;
 
+        Debug.Log($">>> Invincibility activated for {invincibleDuration} seconds");
+
         UpdateHealthUI();
 
         if (currentHealth <= 0)
+        {
+            Debug.Log(">>> Health <= 0, calling Die()!");
             Die();
+        }
+        else
+        {
+            Debug.Log($">>> Player still alive with {currentHealth} HP");
+        }
     }
 
     public void Heal(float amount)
     {
+        Debug.Log($">>> Heal called! Amount: {amount}");
         currentHealth += amount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         UpdateHealthUI();
+        Debug.Log($">>> New health: {currentHealth}");
     }
 
-    void Die()
+    public void Die()
     {
+        Debug.Log(">>> DIE() CALLED!");
         _isDead = true;
-        Debug.Log("Player died! Respawning...");
+        Debug.Log(">>> Player died! Respawning...");
         Respawn();
     }
 
     public void Respawn()
     {
+        Debug.Log(">>> RESPAWN() CALLED!");
         _isDead = false;
         currentHealth = maxHealth;
         UpdateHealthUI();
@@ -119,9 +178,14 @@ public class PlayerHealth : MonoBehaviour
             _controller.enabled = false;
             transform.position = respawnPoint.position;
             _controller.enabled = true;
+            Debug.Log($">>> Player respawned at {respawnPoint.position}");
+        }
+        else
+        {
+            Debug.LogWarning(">>> Respawn failed - missing respawn point or controller!");
         }
 
-        Debug.Log("Player respawned!");
+        Debug.Log(">>> Player respawned!");
     }
 
     void UpdateHealthUI()
@@ -131,10 +195,10 @@ public class PlayerHealth : MonoBehaviour
             healthBar.maxValue = maxHealth;
             healthBar.value = currentHealth;
         }
+
         if (healthText != null)
             healthText.text = "HP: " + currentHealth + " / " + maxHealth;
+
+        Debug.Log($">>> UI Updated - Health: {currentHealth}/{maxHealth}");
     }
 }
-
-
-
